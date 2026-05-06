@@ -17,9 +17,12 @@ func formatRequest(r *http.Request) []string {
 	request = append(request, fmt.Sprintf("RemoteAddr: %v", r.RemoteAddr))
 	request = append(request, fmt.Sprintf("Host: %v", r.Host))
 	request = append(request, formatHeader(r.Header)...)
-	if r.ContentLength > 0 {
-		request = append(request, "")
-		request = append(request, formatRequestBody(r, r.Header.Get("Content-Type"), prettyPrint)...)
+	if r.ContentLength != 0 {
+		body := formatRequestBody(r, r.Header.Get("Content-Type"), prettyPrint)
+		if len(body) > 0 {
+			request = append(request, "")
+			request = append(request, body...)
+		}
 	}
 	return request
 }
@@ -29,9 +32,12 @@ func formatResponse(r *http.Response) []string {
 	var response []string
 	response = append(response, fmt.Sprintf("%v %v", r.Proto, r.Status))
 	response = append(response, formatHeader(r.Header)...)
-	if r.ContentLength > 0 {
-		response = append(response, "")
-		response = append(response, prettyRaw(r.Body, int(r.ContentLength))...)
+	if r.ContentLength != 0 {
+		body := prettyRaw(r.Body, int(r.ContentLength))
+		if len(body) > 0 && body[0] != "" {
+			response = append(response, "")
+			response = append(response, body...)
+		}
 	}
 	return response
 }
@@ -115,8 +121,7 @@ func prettyRaw(body io.ReadCloser, contentLength int) []string {
 		_, err := io.ReadFull(body, b)
 		if err != nil {
 			return []string{err.Error()}
-		} else {
-			return []string{string(b), "[request body truncated...]"}
 		}
+		return []string{string(b), "[request body truncated...]"}
 	}
 }

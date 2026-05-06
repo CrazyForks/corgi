@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version            = "1.1.2"
+	Version            = "1.1.3"
 	DefaultPort        = 8000
 	DefaultMaxBodySize = 256
 )
@@ -107,10 +107,15 @@ func makeResponseBodyReusable(r *http.Response) []byte {
 }
 
 func throwOutRequest(r *http.Request, body []byte) (*http.Response, error) {
+	// 解析用户指定的地址，支持带 scheme 的格式（如 https://example.com）
+	remoteURL, _ := url.Parse(fetchRemoteAddr)
+	if remoteURL.Scheme == "" {
+		remoteURL.Scheme = "http"
+	}
 	// 构建目标 URL
 	targetURL := &url.URL{
-		Scheme:   "http",
-		Host:     fetchRemoteAddr,
+		Scheme:   remoteURL.Scheme,
+		Host:     remoteURL.Host,
 		Path:     r.URL.Path,
 		RawQuery: r.URL.RawQuery,
 	}
